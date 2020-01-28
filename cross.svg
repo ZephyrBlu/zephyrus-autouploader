@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' 'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg fill-opacity="1" xmlns:xlink="http://www.w3.org/1999/xlink" color-rendering="auto" color-interpolation="auto" text-rendering="auto" stroke="hsl(0,0%,85%)" stroke-linecap="square" stroke-miterlimit="10" stroke-opacity="1" fill="hsl(0,0%,85%)" stroke-dasharray="none"stroke-width="1">
+  <!--Unicode Character 'CROSS MARK' (U+274C)-->
+  <defs id="genericDefs" />
+  <g>
+    <g>
+      <path d="M179.7188 324.4219 L155.8125 348.3281 L96.6094 289.125 L37.4062 348.3281 L13.5 324.4219 L72.7031 265.2188 L13.5 206.0156 L37.4062 182.1094 L96.6094 241.3125 L155.8125 182.1094 L179.7188 206.0156 L120.5156 265.2188 L179.7188 324.4219 Z" stroke="none" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="ie=edge" http-equiv="x-ua-compatible">
+    <title>Zephyrus | SC2 Replay Analysis</title>
+    <meta content="width=device-width,initial-scale=1" name="viewport">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500|Major+Mono+Display&display=swap" rel="stylesheet">
+    <link href="index.css" rel="stylesheet">
+</head>
+<body class="Window">
+    <header class="PageTemplate__header">
+        <div class="PageTemplate__drag-region"></div>
+        <h1 class="PageTemplate__title">
+            <span class="PageTemplate__logo">z</span>&nbsp;
+            ZEPHYRUS <span class="PageTemplate__beta-icon">BETA</span>
+        </h1>
+        <h1 class="Window__close" onclick="minWindow()">&#x2715;</h1>
+    </header>
+    <h1 class="login-form__title">Replay Auto-Uploader</h1>
+    <div class="login-form">
+        <form class="login-form__form" onsubmit="login(event)">
+            <p class="login-form__email">
+                <label class="login-form__label">
+                    Email
+                </label>
+                <input
+                    class="login-form__input login-form__input--email"
+                    type="email"
+                    name="username"
+                ></input>
+            </p>
+            <p class="login-form__password">
+                <label class="login-form__label">
+                    Password
+                </label>
+                <input
+                    class="login-form__input login-form__input--password"
+                    type="password"
+                    name="password"
+                ></input>
+            </p>
+            <span class="login-form__flex-wrapper">
+                <input class="login-form__submit" type="submit" value="LOG IN"></input>
+                <div class="lds-ring">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </span>
+            <p class="login-form__error">
+                Incorrect Details
+            </p>
+        </form>
+    </div>
+    <div class="Window__file-upload">
+        File stuff goes here
+    </div>
+    <script>
+        const { net } = require('electron');
+        const remote = require('electron').remote;
+        const loginAPI = require('./login');
+        const [loginForm] = document.getElementsByClassName('login-form');
+        const [fileUpload] = document.getElementsByClassName('Window__file-upload');
+        const [loadingSpinner] = document.getElementsByClassName('lds-ring');
+        const [loginError] = document.getElementsByClassName('login-form__error');
+
+        function minWindow() {
+            var window = remote.getCurrentWindow();
+            window.hide();
+        };
+
+        function toggleView() {
+            loginForm.style.display === 'block' | loginForm.style.display === '' ?
+                loginForm.style.display = 'none' : loginForm.style.display = 'block';
+
+            fileUpload.style.display === 'block' ?
+                fileUpload.style.display = 'none' : fileUpload.style.display = 'block';
+        };
+
+        function toggleSpinner() {
+            loadingSpinner.style.display === 'inline-block' ?
+                loadingSpinner.style.display = 'none' : loadingSpinner.style.display = 'inline-block';
+        };
+
+        function toggleLoginError(state = null) {
+            if (state === 'reset') {
+                loginError.style.display = 'none';
+            } else {
+                loginError.style.display === 'flex' ?
+                    loginError.style.display = 'none' : loginError.style.display = 'flex';
+            }
+        };
+
+        async function login(event) {
+            event.preventDefault();
+
+            toggleSpinner();
+            toggleLoginError('reset');
+
+            const [email, password] = event.target.getElementsByClassName('login-form__input');
+            const url = 'https://zephyrus.gg/api/login/';
+            const result = await loginAPI(url, email.value, password.value);
+
+            toggleSpinner();
+            if (result) {
+                let user = require('electron').remote.getGlobal('user');
+                const watchReplays = require('./replayWatcher');
+
+                user = result.user;
+                console.log(user);
+                watchReplays(user.token);
+                toggleView();
+            } else {
+                toggleLoginError();
+            }
+        };
+    </script>
+</body>
+</html>

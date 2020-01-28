@@ -1,0 +1,16 @@
+{
+  "name": "zephyrus-autouploader",
+  "version": "0.0.1",
+  "description": "A replay autouploader for Zephyrus",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Luke \"ZephyrBlu\" Holroyd",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "electron": "^7.1.9",
+    "node-fetch": "^2.6.0",
+    "username": "^5.1.0"
+  }
+}
