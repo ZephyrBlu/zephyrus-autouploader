@@ -5,7 +5,7 @@
     <meta content="ie=edge" http-equiv="x-ua-compatible">
     <title>Zephyrus | SC2 Replay Analysis</title>
     <meta content="width=device-width,initial-scale=1" name="viewport">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500|Major+Mono+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500|Major+Mono+Display|Open+Sans:700&display=swap" rel="stylesheet">
     <link href="index.css" rel="stylesheet">
 </head>
 <body class="Window">
@@ -55,21 +55,77 @@
         </form>
     </div>
     <div class="Window__file-upload">
-        File stuff goes here
+        <p class="Window__upload-info">
+            Any new replays added to your Accounts folder
+            will be uploaded to zephyrus.gg.
+            <br>
+            If your Account folder does not match the default
+            location, please manually set it to the correct directory.
+        </p>
+        <p class="Window__current-dir"></p>
+        <p class="Window__status-name">
+            Auto-Uploader
+        </p>
+        <p class="Window__status"></p>
+        <label class="Window__status-switch">
+            <input type="checkbox" onclick="toggleMode()">
+            <span class="Window__status-slider Window__status-slider--round"></span>
+        </label>
+        <button class="Window__select-dir login-form__submit" onclick="chooseDir()">
+            Change Accounts Directory
+        </button>
+        <button class="Window__reset-dir" onclick="resetDir()">
+            Reset to default directory
+        </button>
+        <p class="Window__upload-message">
+            Having trouble uploading replays?<br />
+            Contact me on Reddit (ZephryBluu),
+            Discord (ZephyrBlu#4524)
+            or at hello@zephyrus.gg
+            <br>
+            <br>
+            Replays from new patches may not be supported for
+            <span style="text-decoration:underline">1-2 days</span>
+            &nbsp;after the patch drops.<br><br>
+            Please be patient until the site is updated.
+        </p>
     </div>
     <script>
-        const { net } = require('electron');
         const remote = require('electron').remote;
         const loginAPI = require('./login');
         const [loginForm] = document.getElementsByClassName('login-form');
         const [fileUpload] = document.getElementsByClassName('Window__file-upload');
         const [loadingSpinner] = document.getElementsByClassName('lds-ring');
         const [loginError] = document.getElementsByClassName('login-form__error');
+        const [currentDir] = document.getElementsByClassName('Window__current-dir');
+        const [watcherStatus] = document.getElementsByClassName('Window__status');
+        const watcher = require('./replayWatcher');
+        let active = true;
 
         function minWindow() {
             var window = remote.getCurrentWindow();
             window.hide();
         };
+
+        function toggleMode() {
+            let statusText;
+            let statusClass;
+            if (active) {
+                statusText = 'Active';
+                statusClass = 'Window__status--active';
+                watcherStatus.classList.remove('Window__status--idle');
+                active = false;
+            } else {
+                statusText = 'Idle';
+                statusClass = 'Window__status--idle';
+                watcherStatus.classList.remove('Window__status--active');
+                active = true;
+            }
+            watcherStatus.innerHTML = statusText;
+            watcherStatus.classList.add(statusClass);
+        };
+
+        toggleMode();
 
         function toggleView() {
             loginForm.style.display === 'block' | loginForm.style.display === '' ?
@@ -93,6 +149,7 @@
             }
         };
 
+        let user;
         async function login(event) {
             event.preventDefault();
 
@@ -105,16 +162,37 @@
 
             toggleSpinner();
             if (result) {
-                let user = require('electron').remote.getGlobal('user');
-                const watchReplays = require('./replayWatcher');
-
                 user = result.user;
-                console.log(user);
-                watchReplays(user.token);
+                await watcher.watchReplays(user.token);
+                updateDir();
                 toggleView();
             } else {
                 toggleLoginError();
             }
+        };
+
+        function updateDir() {
+            currentDir.innerHTML = `Current Accounts Directory: ${remote.getGlobal('dir').path}`;
+        };
+
+        updateDir();
+
+        async function chooseDir() {
+            await remote.dialog.showOpenDialog({
+              properties: ['openDirectory']
+            }).then(async (result) => {
+                if (!result.cancelled) {
+                    remote.getGlobal('dir').path = result.filePaths[0];
+                    await watcher.restart(user.token);
+                    updateDir();
+                }
+            });
+        };
+
+        async function resetDir() {
+            remote.getGlobal('dir').path = null;
+            await watcher.restart(user.token);
+            updateDir();
         };
     </script>
 </body>

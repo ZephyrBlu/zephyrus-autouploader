@@ -2,28 +2,35 @@ const chokidar = require('chokidar');
 const fs = require('fs');
 const username = require('username');
 const fetch = require('node-fetch');
+const remote = require('electron').remote;
+
+let watcher;
 
 async function watchReplays(token) {
-    console.log('in watchReplays');
-    let replayPath;
-    const accountPath = '/Accounts/**/Replays/Multiplayer/*.SC2Replay';
-    const user = await username();
+    let accountPath;
+    let fullPath;
+    if (!remote.getGlobal('dir').path) {
+        const replayPath = '/**/Replays/Multiplayer/*.SC2Replay';
+        const user = await username();
 
-    if (process.platform === 'win32') {
-        replayPath = `/Users/${user}/Documents/StarCraft II${accountPath}`;
+        if (process.platform === 'win32') {
+            accountPath = `/Users/${user}/Documents/StarCraft II/Accounts`;
+        } else {
+            // mac
+            accountPath = `/Users/${user}/Library/Application Support/Blizzard/Starcraft II/Accounts`;
+        }
+        remote.getGlobal('dir').path = accountPath;
+        fullPath = accountPath + replayPath;
     } else {
-        // mac
-        replayPath = `/Users/${user}/Library/Application Support/Blizzard/Starcraft II${accountPath}`;
+        fullPath = remote.getGlobal('dir').path;
     }
 
-    const watcher = chokidar.watch(replayPath, {
+    watcher = chokidar.watch(fullPath, {
         ignoreInitial: true,
     });
-    console.log('created watcher');
 
     const url = 'https://zephyrus.gg/api/upload/';
     watcher.on('add', async (filePath) => {
-        console.log('adding file');
         const result = await fetch(url, {
             method: 'POST',
             headers: {
@@ -38,7 +45,19 @@ async function watchReplays(token) {
             console.log('fail');
         }
     });
-    console.log('watching replays');
-}
+};
 
-module.exports = watchReplays;
+async function stopWatchingReplays() {
+    await watcher.close();
+};
+
+async function restart(token) {
+    await stopWatchingReplays();
+    await watchReplays(token);
+};
+
+module.exports = {
+    watchReplays: watchReplays,
+    stopWatchingReplays: stopWatchingReplays,
+    restart: restart,
+};

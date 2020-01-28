@@ -3,7 +3,7 @@ const username = require('username');
 const login = require('./login');
 const watchReplays = require('./replayWatcher');
 
-global.user = {};
+global.dir = { path: null };
 
 let win;
 function createWindow() {

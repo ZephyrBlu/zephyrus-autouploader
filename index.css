@@ -109,7 +109,6 @@ h1, h2, h3, h4, h5 {
 .PageTemplate__logo:hover,
 .PageTemplate__logo:focus {
     outline: none;
-    cursor: pointer;
     color: black;
     background-color: var(--light-blue);
 }
@@ -234,6 +233,149 @@ h1, h2, h3, h4, h5 {
 
 .Window__file-upload {
     display: none;
+    margin: 140px auto 0;
+    color: var(--text);
+}
+
+.Window__status-name {
+    background-color: var(--tertiary-background);
+    border-radius: 17px 0 0 17px;
+    font-weight: 700;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 16px;
+    width: max-content;
+    display: inline;
+    padding: 6px 12px;
+    padding-left: 16px;
+}
+
+.Window__status {
+    font-size: 18px;
+    font-weight: lighter;
+    height: 100%;
+    border-radius: 0 17px 17px 0;
+    width: 50px;
+    display: inline-block;
+    padding: 6px 12px;
+    padding-right: 16px;
+    margin: 0;
+}
+
+.Window__status--active {
+    background-color: var(--success);
+}
+
+.Window__status--idle {
+    background-color: var(--error);
+}
+
+/* --------------- TOGGLE SWITCH ---------------- */
+
+.Window__status-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    margin-left: 10px;
+    margin-right: 60px;
+}
+
+.Window__status-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.Window__status-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--success);
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.Window__status-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 30px;
+  bottom: 4px;
+  background-color: var(--text);
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .Window__status-slider {
+  background-color: var(--grey);
+}
+
+input:focus + .Window__status-slider {
+  box-shadow: 0 0 1px var(--grey);
+}
+
+input:checked + .Window__status-slider:before {
+  -webkit-transform: translateX(-26px);
+  -ms-transform: translateX(-26px);
+  transform: translateX(-26px);
+}
+
+.Window__status-slider--round {
+  border-radius: 34px;
+}
+
+.Window__status-slider--round:before {
+  border-radius: 50%;
+}
+
+/* --------------- END TOGGLE SWITCH ---------------- */
+
+.Window__current-dir {
+    font-size: 18px;
+    margin: 30px auto 10px;
+}
+
+.Window__select-dir {
+    padding: 10px 20px;
+    margin: 0 auto;
+    display: inline;
+}
+
+.Window__reset-dir {
+    margin: 20px auto 0;
+    display: block;
+    text-decoration: underline;
+    border: none;
+    background-color: var(--main-background);
+    color: var(--text);
+    font-family: 'Roboto', sans-serif;
+}
+
+.Window__reset-dir:hover {
+    cursor: pointer;
+}
+
+.Window__upload-info {
+    font-size: 14px;
+    padding: 15px;
+    margin: 0 auto;
+    width: max-content;
+    border-radius: 10px;
+    background-color: var(--tertiary-background);
+}
+
+.Window__upload-message {
+    font-size: 14px;
+    margin: 40px 0 0;
+    padding: 15px 0;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    border-top: 1px solid var(--tertiary-background-light);
 }
 
 
