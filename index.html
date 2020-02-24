@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; style-src-elem 'self' https://fonts.googleapis.com; script-src 'unsafe-inline'">
     <meta charset="utf-8">
     <meta content="ie=edge" http-equiv="x-ua-compatible">
     <title>Zephyrus | SC2 Replay Analysis</title>
@@ -61,22 +62,48 @@
             <br>
             If your Account folder does not match the default
             location, please manually set it to the correct directory.
+            <br><br>
+            Replay uploads will take a few seconds to start up. The 100 most recent
+            replays will take a few minutes to complete.
+            <br><br>
+            Closing the window will minimize the application to the tray. Uploads will continue
+            running in the background.<br>
+            To close the application, right-click on the tray icon.
         </p>
+        <div class="Window__inline-wrapper">
+            <p class="Window__status-name">
+                Auto-Uploader
+            </p>
+            <p class="Window__status"></p>
+            <label class="Window__status-switch">
+                <input type="checkbox" onclick="toggleMode()">
+                <span class="Window__status-slider Window__status-slider--round"></span>
+            </label>
+            <button class="Window__scan-dir Window__scan-dir--recent login-form__submit" onclick="uploadRecent()">
+                Upload 100 Most Recent
+            </button>
+            <button class="Window__scan-dir Window__scan-dir--new login-form__submit" onclick="uploadNew()">
+            </button>
+        </div>
+        <p class="Window__replay-count"></p>
         <p class="Window__current-dir"></p>
-        <p class="Window__status-name">
-            Auto-Uploader
-        </p>
-        <p class="Window__status"></p>
-        <label class="Window__status-switch">
-            <input type="checkbox" onclick="toggleMode()">
-            <span class="Window__status-slider Window__status-slider--round"></span>
-        </label>
         <button class="Window__select-dir login-form__submit" onclick="chooseDir()">
             Change Accounts Directory
         </button>
-        <button class="Window__reset-dir" onclick="resetDir()">
-            Reset to default directory
-        </button>
+        <div class="Window__reset-wrapper">
+            <button class="Window__reset-dir" onclick="toggleReset()">
+                Reset to default directory
+            </button>
+            <span class="Window__reset-check">
+                Are you sure?&nbsp;
+                <span class="Window__reset" onclick="resetDir()">
+                    Yes
+                </span>&nbsp;&nbsp;/&nbsp;&nbsp;
+                <span class="Window__reset" onclick="toggleReset()">
+                    No
+                </span>
+            </span>
+        </div>
         <p class="Window__upload-message">
             Having trouble uploading replays?<br />
             Contact me on Reddit (ZephryBluu),
@@ -91,7 +118,9 @@
         </p>
     </div>
     <script>
+        const { ipcRenderer } = require('electron');
         const remote = require('electron').remote;
+        const fs = require('fs');
         const loginAPI = require('./login');
         const [loginForm] = document.getElementsByClassName('login-form');
         const [fileUpload] = document.getElementsByClassName('Window__file-upload');
@@ -99,33 +128,77 @@
         const [loginError] = document.getElementsByClassName('login-form__error');
         const [currentDir] = document.getElementsByClassName('Window__current-dir');
         const [watcherStatus] = document.getElementsByClassName('Window__status');
+        const [resetOptions] = document.getElementsByClassName('Window__reset-check');
+        const [replayCount] = document.getElementsByClassName('Window__replay-count');
+        let scanDir;
+
         const watcher = require('./replayWatcher');
+        let showResetOptions = false;
         let active = true;
+        let recentReplays = [];
+        let newReplays = [];
+
+        let replaySet;
+        if (localStorage.replaySet) {
+            replaySet = JSON.parse(localStorage.replaySet);
+        } else {
+            replaySet = [];
+        }
+
+        let lastRun;
+        if (localStorage.lastRun) {
+            lastRun = localStorage.lastRun;
+        } else {
+            lastRun = Date.now();
+            localStorage.lastRun = lastRun;
+        }
 
         function minWindow() {
             var window = remote.getCurrentWindow();
             window.hide();
         };
 
+        function toggleReset() {
+            let showResetClass;
+            if (showResetOptions) {
+                showResetClass = 'Window__reset-check--hidden';
+                resetOptions.classList.remove('Window__reset-check--visible');
+                showResetOptions = false;
+            } else {
+                showResetClass = 'Window__reset-check--visible';
+                resetOptions.classList.remove('Window__reset-check--hidden');
+                showResetOptions = true;
+            }
+            resetOptions.classList.add(showResetClass);
+        };
+
         function toggleMode() {
             let statusText;
             let statusClass;
+            let scanDirClass;
             if (active) {
                 statusText = 'Active';
                 statusClass = 'Window__status--active';
                 watcherStatus.classList.remove('Window__status--idle');
+
+                scanDirClass = 'Window__scan-dir--visible';
+                scanDir.classList.remove('Window__scan-dir--hidden');
+
                 active = false;
             } else {
                 statusText = 'Idle';
                 statusClass = 'Window__status--idle';
                 watcherStatus.classList.remove('Window__status--active');
+
+                scanDirClass = 'Window__scan-dir--hidden';
+                scanDir.classList.remove('Window__scan-dir--visible');
+
                 active = true;
             }
             watcherStatus.innerHTML = statusText;
             watcherStatus.classList.add(statusClass);
+            scanDir.classList.add(scanDirClass);
         };
-
-        toggleMode();
 
         function toggleView() {
             loginForm.style.display === 'block' | loginForm.style.display === '' ?
@@ -149,6 +222,112 @@
             }
         };
 
+        async function checkRecentReplays() {
+            const accountPath = remote.getGlobal('dir').path;
+
+            async function recurse(path) {
+                return new Promise((resolve, reject) => {
+                    fs.readdir(path, async (err, files) => {
+                        if (err) {
+                            return console.error(path, err);
+                        }
+
+                        await Promise.all(files.map((f) => {
+                            return new Promise((res, rej) => {
+                                fs.stat(`${path}/${f}`, async (err, stats) => {
+                                    if (err) {
+                                        return console.error(`${path}/${f}`, err);
+                                    }
+
+                                    if (stats.isDirectory()) {
+                                        await recurse(`${path}/${f}`);
+                                    } else if (stats.isFile() && (f.slice(-10) === '.SC2Replay')) {
+                                        recentReplays.push([`${path}/${f}`, stats.mtime.getTime()]);
+                                    }
+                                    res();
+                                });
+                            });
+                        }));
+                        resolve();
+                    });
+                });
+            };
+
+            await recurse(accountPath);
+            // sort by most recent modification date
+            recentReplays.sort((a, b) => b[1] - a[1]);
+            recentReplays = recentReplays.slice(0, 100);
+            newReplays = recentReplays.filter(([filePath, lastModified]) => {
+                return lastModified > lastRun;
+            });
+
+            if (!localStorage.firstLogin) {
+                [scanDir] = document.getElementsByClassName('Window__scan-dir--recent');
+            } else {
+                [scanDir] = document.getElementsByClassName('Window__scan-dir--new');
+                scanDir.innerHTML = `Upload ${newReplays.length} Missed Replays`;
+            }
+            scanDir.style.display = 'inline';
+            toggleMode();
+        };
+
+        function uploadRecent() {
+            recentReplays.forEach(([filePath, lastModified]) => {
+                const replayQueue = remote.getGlobal('uploadQueue').queue;
+                replayQueue.push([filePath, replaySet]);
+                remote.getGlobal('uploadQueue').queue = replayQueue;
+            });
+            localStorage.firstLogin = 'false';
+            scanDir.style.display = 'none';
+            if (!localStorage.firstLogin) {
+                [scanDir] = document.getElementsByClassName('Window__scan-dir--recent');
+            } else {
+                [scanDir] = document.getElementsByClassName('Window__scan-dir--new');
+                scanDir.innerHTML = `Upload ${newReplays.length} Missed Replays`;
+            }
+            scanDir.style.display = 'inline';
+        };
+
+        function uploadNew() {
+            newReplays.forEach(([filePath, lastModified]) => {
+                const replayQueue = remote.getGlobal('uploadQueue').queue;
+                replayQueue.push([filePath, replaySet]);
+                remote.getGlobal('uploadQueue').queue = replayQueue;
+            });
+            newReplays = [];
+            scanDir.innerHTML = `Upload ${newReplays.length} Missed Replays`;
+            localStorage.lastRun = Date.now();
+            lastRun = localStorage.lastRun;
+        };
+
+        function updateDir() {
+            currentDir.innerHTML = `Current Accounts Directory: ${remote.getGlobal('dir').path}`;
+        };
+        updateDir();
+
+        function updateStorage() {
+            localStorage.replaySet = JSON.stringify(replaySet);
+        };
+
+        function updateReplayCount() {
+            replayCount.innerHTML = `Replays Uploaded: ${replaySet.length}`;
+        };
+        updateReplayCount();
+
+        function updateAll(replayHash) {
+            replaySet.push(replayHash);
+            updateReplayCount();
+            updateStorage();
+        }
+
+        ipcRenderer.on('update', (event, arg) => {
+            const { e, replayHash } = JSON.parse(arg);
+
+            if (e === 'updateAll') {
+                updateAll(replayHash);
+            }
+        });
+
         let user;
         async function login(event) {
             event.preventDefault();
@@ -157,13 +336,16 @@
             toggleLoginError('reset');
 
             const [email, password] = event.target.getElementsByClassName('login-form__input');
-            const url = 'https://zephyrus.gg/api/login/';
+            // const url = 'https://zephyrus.gg/api/login/';
+            const url = 'https://testing-dot-reflected-codex-228006.appspot.com/api/login/';
             const result = await loginAPI(url, email.value, password.value);
 
             toggleSpinner();
             if (result) {
                 user = result.user;
-                await watcher.watchReplays(user.token);
+                remote.getGlobal('token').token = user.token;
+                await watcher.watchReplays(replaySet);
+                checkRecentReplays();
                 updateDir();
                 toggleView();
             } else {
@@ -171,19 +353,18 @@
             }
         };
 
-        function updateDir() {
-            currentDir.innerHTML = `Current Accounts Directory: ${remote.getGlobal('dir').path}`;
+        async function cancelScan() {
+            await watcher.close();
+            watcher.restart(replaySet);
         };
-
-        updateDir();
 
         async function chooseDir() {
             await remote.dialog.showOpenDialog({
-              properties: ['openDirectory']
+                properties: ['openDirectory']
             }).then(async (result) => {
                 if (!result.cancelled) {
                     remote.getGlobal('dir').path = result.filePaths[0];
-                    await watcher.restart(user.token);
+                    watcher.restart(replaySet);
                     updateDir();
                 }
             });
@@ -191,8 +372,12 @@
 
         async function resetDir() {
             remote.getGlobal('dir').path = null;
-            await watcher.restart(user.token);
+            await watcher.restart(replaySet);
             updateDir();
+
+            resetOptions.classList.remove('Window__reset-check--visible');
+            resetOptions.classList.add('Window__reset-check--hidden');
+            showResetOptions = false;
         };
     </script>
 </body>

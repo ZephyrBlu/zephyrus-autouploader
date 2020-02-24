@@ -237,6 +237,10 @@ h1, h2, h3, h4, h5 {
     color: var(--text);
 }
 
+.Window__inline-wrapper {
+    margin: 30px auto 0;
+}
+
 .Window__status-name {
     background-color: var(--tertiary-background);
     border-radius: 17px 0 0 17px;
@@ -336,7 +340,26 @@ input:checked + .Window__status-slider:before {
 
 .Window__current-dir {
     font-size: 18px;
-    margin: 30px auto 10px;
+    margin: 10px auto;
+}
+
+.Window__scan-dir {
+    padding: 10px 20px;
+    margin: 0 auto;
+    display: none;
+}
+
+.Window__scan-dir--visible {
+    visibility: visible;
+}
+
+.Window__scan-dir--hidden {
+    visibility: hidden;
+}
+
+.Window__replay-count {
+    margin: 20px auto 40px;
+    font-size: 24px;
 }
 
 .Window__select-dir {
@@ -345,9 +368,13 @@ input:checked + .Window__status-slider:before {
     display: inline;
 }
 
-.Window__reset-dir {
-    margin: 20px auto 0;
+.Window__reset-wrapper {
+    margin: 10px auto 0;
     display: block;
+    background-color: var(--main-background);
+}
+
+.Window__reset-dir {
     text-decoration: underline;
     border: none;
     background-color: var(--main-background);
@@ -356,6 +383,23 @@ input:checked + .Window__status-slider:before {
 }
 
 .Window__reset-dir:hover {
+    cursor: pointer;
+}
+
+.Window__reset-check {
+    display: none;
+    font-size: 12px;
+}
+
+.Window__reset-check--visible {
+    display: inline;
+}
+
+.Window__reset-check--hidden {
+    display: none;
+}
+
+.Window__reset:hover {
     cursor: pointer;
 }
 

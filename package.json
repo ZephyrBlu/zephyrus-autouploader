@@ -4,13 +4,31 @@
   "description": "A replay autouploader for Zephyrus",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
-  "author": "Luke \"ZephyrBlu\" Holroyd",
+  "build": {
+    "appId": "gg.zephyrus",
+    "productName": "Zephyrus Auto-Uploader"
+  },
+  "win": {
+    "target": "nsis"
+  },
+  "nsis": {
+    "installerIcon": "build/favicon.ico",
+    "uninstallerIcon": "build/favicon.ico"
+  },
+  "author": "Luke 'ZephyrBlu' Holroyd",
   "license": "UNLICENSED",
   "dependencies": {
-    "electron": "^7.1.9",
+    "chokidar": "^3.3.1",
     "node-fetch": "^2.6.0",
     "username": "^5.1.0"
+  },
+  "devDependencies": {
+    "electron": "^7.1.9",
+    "electron-builder": "^22.3.2"
   }
 }
