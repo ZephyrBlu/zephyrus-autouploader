@@ -336,8 +336,8 @@
             toggleLoginError('reset');
 
             const [email, password] = event.target.getElementsByClassName('login-form__input');
-            // const url = 'https://zephyrus.gg/api/login/';
-            const url = 'https://testing-dot-reflected-codex-228006.appspot.com/api/login/';
+            const url = 'https://zephyrus.gg/api/login/';
+            // const url = 'https://testing-dot-reflected-codex-228006.appspot.com/api/login/';
             const result = await loginAPI(url, email.value, password.value);
 
             toggleSpinner();

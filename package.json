@@ -11,7 +11,8 @@
   },
   "build": {
     "appId": "gg.zephyrus",
-    "productName": "Zephyrus Auto-Uploader"
+    "productName": "Zephyrus Auto-Uploader",
+    "asarUnpack": ["*.js", "*.html", "*.css"]
   },
   "win": {
     "target": "nsis"

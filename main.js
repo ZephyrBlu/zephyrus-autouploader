@@ -62,8 +62,8 @@ app.on('ready', async () => {
 
                         const replayHash = crypto.createHash('md5').update(replayFile).digest('hex');
                         if (!replaySet.includes(replayHash)) {
-                            // const url = 'https://zephyrus.gg/api/upload/';
-                            const url = 'https://testing-dot-reflected-codex-228006.appspot.com/api/upload/';
+                            const url = 'https://zephyrus.gg/api/upload/';
+                            // const url = 'https://testing-dot-reflected-codex-228006.appspot.com/api/upload/';
                             const result = await fetch(url, {
                                 method: 'POST',
                                 headers: {
